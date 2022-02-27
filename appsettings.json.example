@@ -1,0 +1,6 @@
+{
+  "tenantId":"xxx",
+  "applicationId":"xxx",
+  "applicationSecret":"env",
+  "redirectUri":"https://localhost"
+}
