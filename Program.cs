@@ -22,6 +22,48 @@ namespace graphconsoleapp
         Console.WriteLine("invalid appsettings.json file");
         return;
       }
+      var userName = ReadUsername();
+      var userPassword = ReadPassword();
+
+      var client = GetAuthenticatedHTTPClient(config, userName, userPassword);
+
+      var totalRequests = 100;
+      var successRequests = 0;
+      var tasks = new List<Task>();
+      var failResponseCode = HttpStatusCode.OK;
+      HttpResponseHeaders failedHeaders = null!;
+
+      for (int i = 0; i < totalRequests; i++)
+      {
+        tasks.Add(Task.Run(() =>
+        {
+          var response = client.GetAsync("https://graph.microsoft.com/v1.0/me/messages").Result;
+          Console.Write(".");
+          if (response.StatusCode == HttpStatusCode.OK)
+          {
+            successRequests++;
+          }
+          else
+          {
+            Console.Write('X');
+            failResponseCode = response.StatusCode;
+            failedHeaders = response.Headers;
+          }
+        }));
+      }
+      var allWork = Task.WhenAll(tasks);
+      try
+      {
+        allWork.Wait();
+      }
+      catch {}
+      Console.WriteLine();
+      Console.WriteLine("{0}/{1} requests succeeded.", successRequests, totalRequests);
+      if (successRequests != totalRequests)
+      {
+        Console.WriteLine("Failed response code: {0}", failResponseCode.ToString());
+        Console.WriteLine("Failed response headers: {0}", failedHeaders);
+      }
     }
     public static GraphServiceClient? _graphClient;
     private static IConfigurationRoot? LoadAppSettings()
@@ -71,6 +113,26 @@ namespace graphconsoleapp
     private static SecureString ReadPassword()
     {
       Console.WriteLine("Enter your password");
+      SecureString password = new SecureString();
+      while (true)
+      {
+        ConsoleKeyInfo c = Console.ReadKey(true);
+        if (c.Key == ConsoleKey.Enter)
+        {
+          break;
+        }
+        password.AppendChar(c.KeyChar);
+        Console.Write("*");
+      }
+      Console.WriteLine();
+      return password;
+    }
+    private static string ReadUsername()
+    {
+      string? username;
+      Console.WriteLine("Enter your username");
+      username = Console.ReadLine();
+      return username ?? "";
     }
   }
 }
