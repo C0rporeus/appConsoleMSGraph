@@ -35,3 +35,4 @@
 /home/f3nr1r/Documents/project/graphconsoleapp/obj/Debug/net6.0/graphconsoleapp.pdb
 /home/f3nr1r/Documents/project/graphconsoleapp/obj/Debug/net6.0/graphconsoleapp.genruntimeconfig.cache
 /home/f3nr1r/Documents/project/graphconsoleapp/obj/Debug/net6.0/ref/graphconsoleapp.dll
+/home/f3nr1r/Documents/project/graphconsoleapp/bin/Debug/net6.0/Newtonsoft.Json.dll

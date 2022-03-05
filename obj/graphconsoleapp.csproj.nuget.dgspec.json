@@ -57,6 +57,10 @@
             "Microsoft.Identity.Client": {
               "target": "Package",
               "version": "[4.41.0, )"
+            },
+            "newtonsoft.json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
             }
           },
           "imports": [

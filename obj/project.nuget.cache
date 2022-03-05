@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "YD0y+zIsTECvV9Ih54qXTdsJoI6d/Zxlo3AOlTNcfx16Az8WVaM4Jzv6s0nYuAQvhrb3gWXrn1pREJli2nPlYQ==",
+  "dgSpecHash": "JhFm4DTCf0/sN3Vc1biMBoRqpWuGTQjRQfHp95H1uHshkvODTkn9j6GdPPsJkjhNLVGnIknrAF+ejwsm7nBoQQ==",
   "success": true,
   "projectFilePath": "/home/f3nr1r/Documents/project/graphconsoleapp/graphconsoleapp.csproj",
   "expectedPackageFiles": [
@@ -25,6 +25,7 @@
     "/home/f3nr1r/.nuget/packages/microsoft.identitymodel.tokens/6.15.1/microsoft.identitymodel.tokens.6.15.1.nupkg.sha512",
     "/home/f3nr1r/.nuget/packages/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg.sha512",
     "/home/f3nr1r/.nuget/packages/microsoft.netcore.targets/1.1.0/microsoft.netcore.targets.1.1.0.nupkg.sha512",
+    "/home/f3nr1r/.nuget/packages/newtonsoft.json/13.0.1/newtonsoft.json.13.0.1.nupkg.sha512",
     "/home/f3nr1r/.nuget/packages/system.collections/4.3.0/system.collections.4.3.0.nupkg.sha512",
     "/home/f3nr1r/.nuget/packages/system.diagnostics.diagnosticsource/4.7.1/system.diagnostics.diagnosticsource.4.7.1.nupkg.sha512",
     "/home/f3nr1r/.nuget/packages/system.globalization/4.3.0/system.globalization.4.3.0.nupkg.sha512",
