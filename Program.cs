@@ -16,6 +16,8 @@ namespace graphconsoleapp
 {
   public class Program
   {
+    private static object? _deltaLink = null;
+    private static IUserDeltaCollectionPage? _previousPage = null;
     public static void Main(string[] args)
     {
       var config = LoadAppSettings();
@@ -26,86 +28,73 @@ namespace graphconsoleapp
       }
       var userName = ReadUsername();
       var userPassword = ReadPassword();
-
-      var client = GetAuthenticatedHTTPClient(config, userName, userPassword);
-
-      var stopwatch = new System.Diagnostics.Stopwatch();
-      stopwatch.Start();
-
-      var clientResponse = client.GetAsync("https://graph.microsoft.com/v1.0/me/messages?$select=id&$top=100").Result;
-      // enumerate through the list of messages
-      var httpResponseTask = clientResponse.Content.ReadAsStringAsync();
-      httpResponseTask.Wait();
-      var graphMessages = JsonSerializer.Deserialize<Messages>(httpResponseTask.Result);
-      var items = graphMessages == null ? Array.Empty<Message>() : graphMessages.Items;
-
-      var tasks = new List<Task>();
-      foreach (var graphMessage in items)
-      {
-        tasks.Add(Task.Run(() =>
-        {
-
-          Console.WriteLine("...retrieving message: {0}", graphMessage.Id);
-
-          var messageDetail = GetMessageDetail(client, graphMessage.Id);
-
-          if (messageDetail != null)
-          {
-            Console.WriteLine("SUBJECT: {0}", messageDetail.Subject);
-          }
-
-        }));
-      }
-      // do all work in parallel & wait for it to complete
-      var allWork = Task.WhenAll(tasks);
-      try
-      {
-        allWork.Wait();
-      }
-      catch { }
-      stopwatch.Stop();
+      Console.WriteLine("All users in tenant:");
+      CheckForUpdates(config, userName, userPassword);
       Console.WriteLine();
-      Console.WriteLine("Elapsed time: {0} seconds", stopwatch.Elapsed.Seconds);
-
-      /* var totalRequests = 100;
-      var successRequests = 0;
-      var tasks = new List<Task>();
-      var failResponseCode = HttpStatusCode.OK;
-      HttpResponseHeaders failedHeaders = null!;
-
-      for (int i = 0; i < totalRequests; i++)
+      while (true)
       {
-        tasks.Add(Task.Run(() =>
-        {
-          var response = client.GetAsync("https://graph.microsoft.com/v1.0/me/messages").Result;
-          Console.Write(".");
-          if (response.StatusCode == HttpStatusCode.OK)
-          {
-            successRequests++;
-          }
-          else
-          {
-            Console.Write('X');
-            failResponseCode = response.StatusCode;
-            failedHeaders = response.Headers;
-          }
-        }));
+        Console.WriteLine("... sleeping for 10s - press CTRL+C to terminate");
+        System.Threading.Thread.Sleep(10 * 1000);
+        Console.WriteLine("> Checking for new/updated users since last query...");
+        CheckForUpdates(config, userName, userPassword);
       }
-      var allWork = Task.WhenAll(tasks);
-      try
+    }
+    private static void CheckForUpdates(IConfigurationRoot config, string userName, SecureString userPassword)
+    {
+      var graphClient = GetAuthenticatedHTTPClient(config, userName, userPassword);
+
+      // get a page of users
+      var users = GetUsers(graphClient, _deltaLink);
+
+      OutputUsers(users);
+
+      // go through all of the pages so that we can get the delta link on the last page.
+      while (users.NextPageRequest != null)
       {
-        allWork.Wait();
+        users = users.NextPageRequest.GetAsync().Result;
+        OutputUsers(users);
       }
-      catch { }
-      Console.WriteLine();
-      Console.WriteLine("{0}/{1} requests succeeded.", successRequests, totalRequests);
-      if (successRequests != totalRequests)
+      object? deltaLink;
+
+      if (users.AdditionalData.TryGetValue("@odata.deltaLink", out deltaLink))
       {
-        Console.WriteLine("Failed response code: {0}", failResponseCode.ToString());
-        Console.WriteLine("Failed response headers: {0}", failedHeaders);
-      } */
+        _deltaLink = deltaLink;
+      }
     }
 
+    private static void OutputUsers(IUserDeltaCollectionPage users)
+    {
+      foreach (var user in users)
+      {
+        Console.WriteLine($"User: {user.Id}, {user.GivenName} {user.Surname}");
+      }
+    }
+    private static IUserDeltaCollectionPage GetUsers(GraphServiceClient graphClient, object deltaLink)
+    {
+      IUserDeltaCollectionPage page;
+
+      // IF this is the first request, then request all users
+      //    and include Delta() to request a delta link to be included in the
+      //    last page of data
+      if (_previousPage == null || deltaLink == null)
+      {
+        page = graphClient.Users
+                          .Delta()
+                          .Request()
+                          .Select("Id,GivenName,Surname")
+                          .GetAsync()
+                          .Result;
+      }
+      // ELSE, not the first page so get the next page of users
+      else
+      {
+        _previousPage.InitializeNextPageRequest(graphClient, deltaLink.ToString());
+        page = _previousPage.NextPageRequest.GetAsync().Result;
+      }
+
+      _previousPage = page;
+      return page;
+    }
     private static Message? GetMessageDetail(HttpClient client, string messageId, int defaultDelay = 2)
     {
       Message? messageDetail = null;
@@ -178,7 +167,7 @@ namespace graphconsoleapp
       List<string> scopes = new List<string>();
       //scopes.Add("https://graph.microsoft.com/.default");
       scopes.Add("User.Read");
-      scopes.Add("Mail.Read");
+      scopes.Add("User.Read.All");
       var cca = PublicClientApplicationBuilder.Create(clientId)
                                               .WithAuthority(authority)
                                               .Build();
